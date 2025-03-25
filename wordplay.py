@@ -5,15 +5,15 @@ import random
 # คำศัพท์แต่ละหมวดหมู่
 word_categories = {
     "ประเทศ": {
-        "คำศัพท์": ["Thailand 🇹🇭", "Japan 🇯🇵", "France 🇫🇷", "Brazil 🇧🇷"],
+        "คำศัพท์": ["Thailand", "Japan", "France", "Brazil"],
         "คำใบ้": ["ประเทศในเอเชียตะวันออกเฉียงใต้", "ประเทศที่มีอนิเมะดัง", "เมืองหลวงคือปารีส", "ประเทศในอเมริกาใต้"]
     },
     "ผลไม้": {
-        "คำศัพท์": ["Apple 🍏", "Banana 🍌", "Mango 🥭", "Orange 🍊"],
+        "คำศัพท์": ["Apple", "Banana", "Mango", "Orange"],
         "คำใบ้": ["ผลไม้สีเขียว-แดง", "ผลไม้สีเหลืองงอได้", "ผลไม้เมืองร้อนสีเหลือง", "ผลไม้ที่เป็นชื่อสี"]
     },
     "สัตว์": {
-        "คำศัพท์": ["Tiger 🐯", "Elephant 🐘", "Rabbit 🐰", "Penguin 🐧"],
+        "คำศัพท์": ["Tiger", "Elephant", "Rabbit", "Penguin"],
         "คำใบ้": ["เสือที่อยู่ในป่า", "สัตว์บกที่ตัวใหญ่ที่สุด", "สัตว์ที่กระโดดได้", "นกที่ว่ายน้ำเก่ง"]
     }
 }
@@ -35,6 +35,8 @@ if "start_time" not in st.session_state:
     st.session_state.start_time = None
 if "user_answer" not in st.session_state:
     st.session_state.user_answer = ""
+if "message" not in st.session_state:
+    st.session_state.message = ""
 
 # ฟังก์ชันเริ่มเกม
 def start_game():
@@ -51,6 +53,16 @@ def select_new_word():
     st.session_state.time_left = 60
     st.session_state.start_time = time.time()
     st.session_state.user_answer = ""
+    st.session_state.message = ""
+
+# ฟังก์ชันรีเซตเกม
+def reset_game():
+    st.session_state.score = 0
+    st.session_state.game_running = False
+    st.session_state.message = ""
+    st.session_state.word_to_guess = ""
+    st.session_state.hint = ""
+    st.session_state.time_left = 60
 
 # UI เกม
 st.title("🎮 WordPlay: ทายคำศัพท์")
@@ -63,6 +75,10 @@ st.session_state.selected_category = st.selectbox("📂 เลือกหมว
 if st.button("🚀 เริ่มเกม"):
     start_game()
 
+# ปุ่มรีเซตเกม
+if st.button("🔄 รีเซตเกม"):
+    reset_game()
+
 # ถ้าเกมกำลังทำงาน
 if st.session_state.game_running:
     # แสดงคำใบ้และจำนวนตัวอักษร
@@ -70,32 +86,35 @@ if st.session_state.game_running:
     st.write(f"💡 คำใบ้: {st.session_state.hint}")
     st.write(f"🔢 คำศัพท์มีทั้งหมด {word_length} ตัวอักษร")
 
-    # แสดงเวลา
+    # นับถอยหลังเวลา
     elapsed_time = time.time() - st.session_state.start_time
     st.session_state.time_left = max(0, 60 - int(elapsed_time))
+
+    # แสดงเวลา
     st.write(f"⏳ เวลาที่เหลือ: {st.session_state.time_left} วินาที")
 
     # กล่องให้กรอกคำตอบ
-    user_answer = st.text_input("🔤 พิมพ์คำตอบของคุณ", value="", key="answer_input")
+    user_input = st.text_input("🔤 พิมพ์คำตอบของคุณ")
 
     # ปุ่มส่งคำตอบ
     if st.button("✅ ส่งคำตอบ"):
-        if user_answer.lower().strip() == st.session_state.word_to_guess.lower().strip():
-            st.success("🎉 คำตอบถูกต้อง! +10 คะแนน")
+        if user_input.lower().strip() == st.session_state.word_to_guess.lower().strip():
+            st.success(f"🎉 คำตอบถูกต้อง! +10 คะแนน\n👉 คำตอบ: {st.session_state.word_to_guess}")
             st.session_state.score += 10
-
-            # เลือกคำใหม่เมื่อผู้เล่นตอบถูก
             if st.session_state.score < 100:
                 select_new_word()
-                st.experimental_rerun()
             else:
                 st.session_state.game_running = False
                 st.success("🏆 คุณทำคะแนนเต็ม 100! ยินดีด้วย!")
         else:
-            st.error("❌ คำตอบผิด ลองอีกครั้ง!")
+            st.error(f"❌ คำตอบผิด!\n👉 คำตอบที่ถูกต้องคือ: {st.session_state.word_to_guess}")
+            select_new_word()  # เปลี่ยนคำใหม่ทันที
+
+    # ปุ่มไปข้อถัดไป
+    if st.button("➡️ ข้อถัดไป"):
+        select_new_word()
 
     # ถ้าเวลาหมด
     if st.session_state.time_left <= 0:
-        st.error("⏰ หมดเวลา! คำตอบคือ: " + st.session_state.word_to_guess)
+        st.error(f"⏰ หมดเวลา! คำตอบคือ: {st.session_state.word_to_guess}")
         select_new_word()
-        st.experimental_rerun()
