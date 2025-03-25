@@ -103,18 +103,21 @@ if st.session_state.game_running:
             st.session_state.score += 10
             if st.session_state.score < 100:
                 select_new_word()
+                st.experimental_rerun()
             else:
                 st.session_state.game_running = False
                 st.success("🏆 คุณทำคะแนนเต็ม 100! ยินดีด้วย!")
         else:
-            st.error(f"❌ คำตอบผิด!\n👉 คำตอบที่ถูกต้องคือ: {st.session_state.word_to_guess}")
-            select_new_word()  # เปลี่ยนคำใหม่ทันที
+            st.error(f"❌ คำตอบผิด! กรุณาลองใหม่\n👉 คำตอบที่ถูกต้องคือ: {st.session_state.word_to_guess}")
+            st.session_state.user_answer = ""  # รีเซ็ตคำตอบ
 
-    # ปุ่มไปข้อถัดไป
+    # ปุ่มไปข้อถัดไป (ข้ามคำถาม)
     if st.button("➡️ ข้อถัดไป"):
         select_new_word()
+        st.experimental_rerun()
 
     # ถ้าเวลาหมด
     if st.session_state.time_left <= 0:
         st.error(f"⏰ หมดเวลา! คำตอบคือ: {st.session_state.word_to_guess}")
         select_new_word()
+        st.experimental_rerun()
