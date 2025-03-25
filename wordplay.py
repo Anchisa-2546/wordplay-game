@@ -38,22 +38,22 @@ if "user_answer" not in st.session_state:
 if "message" not in st.session_state:
     st.session_state.message = ""
 
-# ฟังก์ชันเริ่มเกม
-def start_game():
-    st.session_state.score = 0
-    st.session_state.game_running = True
-    select_new_word()
-
 # ฟังก์ชันเลือกคำใหม่
 def select_new_word():
     category = st.session_state.selected_category
     index = random.randint(0, len(word_categories[category]["คำศัพท์"]) - 1)
     st.session_state.word_to_guess = word_categories[category]["คำศัพท์"][index]
     st.session_state.hint = word_categories[category]["คำใบ้"][index]
-    st.session_state.time_left = 60
     st.session_state.start_time = time.time()
     st.session_state.user_answer = ""
     st.session_state.message = ""
+
+# ฟังก์ชันเริ่มเกม
+def start_game():
+    st.session_state.score = 0
+    st.session_state.game_running = True
+    st.session_state.time_left = 60
+    select_new_word()
 
 # ฟังก์ชันรีเซตเกม
 def reset_game():
@@ -63,10 +63,11 @@ def reset_game():
     st.session_state.word_to_guess = ""
     st.session_state.hint = ""
     st.session_state.time_left = 60
+    st.session_state.user_answer = ""
 
 # UI เกม
 st.title("🎮 WordPlay: ทายคำศัพท์")
-st.subheader(f"📊 คะแนน: {st.session_state.score}/100")
+st.subheader(f"📊 คะแนน: {st.session_state.score}")
 
 # เลือกหมวดหมู่
 st.session_state.selected_category = st.selectbox("📂 เลือกหมวดหมู่", ["ประเทศ", "ผลไม้", "สัตว์"])
@@ -81,11 +82,6 @@ if st.button("🔄 รีเซตเกม"):
 
 # ถ้าเกมกำลังทำงาน
 if st.session_state.game_running:
-    # แสดงคำใบ้และจำนวนตัวอักษร
-    word_length = len(st.session_state.word_to_guess.replace(" ", ""))  # นับตัวอักษรไม่นับช่องว่าง
-    st.write(f"💡 คำใบ้: {st.session_state.hint}")
-    st.write(f"🔢 คำศัพท์มีทั้งหมด {word_length} ตัวอักษร")
-
     # นับถอยหลังเวลา
     elapsed_time = time.time() - st.session_state.start_time
     st.session_state.time_left = max(0, 60 - int(elapsed_time))
@@ -93,28 +89,28 @@ if st.session_state.game_running:
     # แสดงเวลา
     st.write(f"⏳ เวลาที่เหลือ: {st.session_state.time_left} วินาที")
 
+    # ถ้าเวลาหมด
+    if st.session_state.time_left <= 0:
+        st.error(f"⏰ หมดเวลา! คำตอบคือ: {st.session_state.word_to_guess}")
+        time.sleep(1)  # หน่วงเวลาก่อนเปลี่ยนคำใหม่
+        select_new_word()
+
+    # แสดงคำใบ้และจำนวนตัวอักษร
+    word_length = len(st.session_state.word_to_guess.replace(" ", ""))  # นับตัวอักษรไม่นับช่องว่าง
+    st.write(f"💡 คำใบ้: {st.session_state.hint}")
+    st.write(f"🔢 คำศัพท์มีทั้งหมด {word_length} ตัวอักษร")
+
     # กล่องให้กรอกคำตอบ
-    user_input = st.text_input("🔤 พิมพ์คำตอบของคุณ", value="", key="answer_input")
+    user_input = st.text_input("🔤 พิมพ์คำตอบของคุณ", value=st.session_state.user_answer, key="answer_input")
 
     # ปุ่มส่งคำตอบ
     if st.button("✅ ส่งคำตอบ"):
         if user_input.lower().strip() == st.session_state.word_to_guess.lower().strip():
-            st.success(f"🎉 คำตอบถูกต้อง! +10 คะแนน\n👉 คำตอบ: {st.session_state.word_to_guess}")
             st.session_state.score += 10
-            if st.session_state.score < 100:
-                select_new_word()
-            else:
-                st.session_state.game_running = False
-                st.success("🏆 คุณทำคะแนนเต็ม 100! ยินดีด้วย!")
+            st.success(f"🎉 คำตอบถูกต้อง! +10 คะแนน\n👉 คำตอบ: {st.session_state.word_to_guess}")
         else:
-            st.error(f"❌ คำตอบผิด! กรุณาลองใหม่\n👉 คำตอบที่ถูกต้องคือ: {st.session_state.word_to_guess}")
-            st.session_state.user_answer = ""  # รีเซ็ตคำตอบ
+            st.session_state.score -= 10
+            st.error(f"❌ คำตอบผิด! -10 คะแนน\n👉 คำตอบที่ถูกต้องคือ: {st.session_state.word_to_guess}")
 
-    # ปุ่มไปข้อถัดไป (ข้ามคำถาม)
-    if st.button("➡️ ข้อถัดไป"):
-        select_new_word()
-
-    # ถ้าเวลาหมด
-    if st.session_state.time_left <= 0:
-        st.error(f"⏰ หมดเวลา! คำตอบคือ: {st.session_state.word_to_guess}")
+        time.sleep(1)  # หน่วงเวลาก่อนเปลี่ยนคำใหม่
         select_new_word()
