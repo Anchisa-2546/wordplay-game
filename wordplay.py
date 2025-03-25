@@ -2,104 +2,100 @@ import streamlit as st
 import time
 import random
 
-# หมวดหมู่คำศัพท์
+# คำศัพท์แต่ละหมวดหมู่
 word_categories = {
-    "ประเทศ 🌍": [
-        {"word": "ประเทศไทย", "hint": "🔑 ประเทศในเอเชียตะวันออกเฉียงใต้"},
-        {"word": "ญี่ปุ่น", "hint": "🔑 ประเทศที่มีภูเขาไฟฟูจิ"},
-        {"word": "ฝรั่งเศส", "hint": "🔑 ประเทศที่มีหอไอเฟล"},
-        {"word": "อเมริกา", "hint": "🔑 ประเทศที่มีเทพีเสรีภาพ"}
-    ],
-    "ผลไม้ 🍎": [
-        {"word": "มะม่วง", "hint": "🔑 ผลไม้สีเหลือง ยอดฮิตในไทย"},
-        {"word": "สตรอว์เบอร์รี่", "hint": "🔑 ผลไม้สีแดง มีเมล็ดรอบๆ"},
-        {"word": "แตงโม", "hint": "🔑 ผลไม้สีเขียว ภายในสีแดง มีเมล็ดสีดำ"},
-        {"word": "กล้วย", "hint": "🔑 ผลไม้สีเหลือง ยาวและโค้ง"}
-    ],
-    "สัตว์ 🐾": [
-        {"word": "สิงโต", "hint": "🔑 ราชาแห่งป่า"},
-        {"word": "ช้าง", "hint": "🔑 สัตว์บกที่ใหญ่ที่สุด"},
-        {"word": "เพนกวิน", "hint": "🔑 นกที่ว่ายน้ำได้ แต่บินไม่ได้"},
-        {"word": "จระเข้", "hint": "🔑 สัตว์เลื้อยคลานที่อยู่ทั้งบนบกและในน้ำ"}
-    ]
+    "ประเทศ": {
+        "คำศัพท์": ["Thailand 🇹🇭", "Japan 🇯🇵", "France 🇫🇷", "Brazil 🇧🇷"],
+        "คำใบ้": ["ประเทศในเอเชียตะวันออกเฉียงใต้", "ประเทศที่มีอนิเมะดัง", "เมืองหลวงคือปารีส", "ประเทศในอเมริกาใต้"]
+    },
+    "ผลไม้": {
+        "คำศัพท์": ["Apple 🍏", "Banana 🍌", "Mango 🥭", "Orange 🍊"],
+        "คำใบ้": ["ผลไม้สีเขียว-แดง", "ผลไม้สีเหลืองงอได้", "ผลไม้เมืองร้อนสีเหลือง", "ผลไม้ที่เป็นชื่อสี"]
+    },
+    "สัตว์": {
+        "คำศัพท์": ["Tiger 🐯", "Elephant 🐘", "Rabbit 🐰", "Penguin 🐧"],
+        "คำใบ้": ["เสือที่อยู่ในป่า", "สัตว์บกที่ตัวใหญ่ที่สุด", "สัตว์ที่กระโดดได้", "นกที่ว่ายน้ำเก่ง"]
+    }
 }
 
-# ฟังก์ชันรีเซ็ตเกม
-def reset_game():
-    selected_category = st.session_state.get("selected_category", "ประเทศ 🌍")  
-    word_data = random.choice(word_categories[selected_category])  
-    st.session_state.word = word_data["word"]
-    st.session_state.hint = word_data["hint"]
-    st.session_state.time_left = 60  
-    st.session_state.user_input = ""
-    st.session_state.correct = None  
-    st.session_state.running = True  
+# ตั้งค่าค่าเริ่มต้น
+if "score" not in st.session_state:
+    st.session_state.score = 0
+if "time_left" not in st.session_state:
+    st.session_state.time_left = 60
+if "game_running" not in st.session_state:
+    st.session_state.game_running = False
+if "selected_category" not in st.session_state:
+    st.session_state.selected_category = "ประเทศ"
+if "word_to_guess" not in st.session_state:
+    st.session_state.word_to_guess = ""
+if "hint" not in st.session_state:
+    st.session_state.hint = ""
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
+if "user_answer" not in st.session_state:
+    st.session_state.user_answer = ""
 
-    # ถ้ายังไม่มีคะแนนให้ตั้งค่าเป็น 0
-    if "score" not in st.session_state:
-        st.session_state.score = 0  
+# ฟังก์ชันเริ่มเกม
+def start_game():
+    st.session_state.score = 0
+    st.session_state.game_running = True
+    select_new_word()
 
-    st.rerun()  # รีเฟรชหน้า
-
-# ตรวจสอบค่า session_state
-if "word" not in st.session_state:
-    reset_game()
+# ฟังก์ชันเลือกคำใหม่
+def select_new_word():
+    category = st.session_state.selected_category
+    index = random.randint(0, len(word_categories[category]["คำศัพท์"]) - 1)
+    st.session_state.word_to_guess = word_categories[category]["คำศัพท์"][index]
+    st.session_state.hint = word_categories[category]["คำใบ้"][index]
+    st.session_state.time_left = 60
+    st.session_state.start_time = time.time()
+    st.session_state.user_answer = ""
 
 # UI เกม
 st.title("🎮 WordPlay: ทายคำศัพท์")
-
-# แสดงคะแนน
-st.write(f"🏆 คะแนน: {st.session_state.get('score', 0)}/100")
+st.subheader(f"📊 คะแนน: {st.session_state.score}/100")
 
 # เลือกหมวดหมู่
-category = st.selectbox("📂 เลือกหมวดหมู่", list(word_categories.keys()), key="selected_category")
+st.session_state.selected_category = st.selectbox("📂 เลือกหมวดหมู่", ["ประเทศ", "ผลไม้", "สัตว์"])
 
 # ปุ่มเริ่มเกม
 if st.button("🚀 เริ่มเกม"):
-    reset_game()
+    start_game()
 
-# แสดงคำใบ้
-st.write(f"💡 คำใบ้: {st.session_state.hint}")
+# ถ้าเกมกำลังทำงาน
+if st.session_state.game_running:
+    # แสดงคำใบ้และจำนวนตัวอักษร
+    word_length = len(st.session_state.word_to_guess.replace(" ", ""))  # นับตัวอักษรไม่นับช่องว่าง
+    st.write(f"💡 คำใบ้: {st.session_state.hint}")
+    st.write(f"🔢 คำศัพท์มีทั้งหมด {word_length} ตัวอักษร")
 
-# ระบบนับเวลาถอยหลัง
-if st.session_state.running:
-    if st.session_state.time_left > 0:
-        st.session_state.time_left -= 1
-        time.sleep(1)
-        st.rerun()  
-    else:
-        st.session_state.running = False  
+    # นับถอยหลังเวลา
+    elapsed_time = time.time() - st.session_state.start_time
+    st.session_state.time_left = max(0, 60 - int(elapsed_time))
 
-# แสดงเวลา
-st.write(f"⏳ เวลาที่เหลือ: {st.session_state.time_left} วินาที")
+    # แสดงเวลา
+    st.write(f"⏳ เวลาที่เหลือ: {st.session_state.time_left} วินาที")
 
-# ช่องป้อนคำตอบ
-user_input = st.text_input("🎭 พิมพ์คำศัพท์ที่ต้องการทาย", key="user_input")
+    # กล่องให้กรอกคำตอบ
+    st.session_state.user_answer = st.text_input("🔤 พิมพ์คำตอบของคุณ", value=st.session_state.user_answer)
 
-# ปุ่มส่งคำตอบ
-if st.button("✅ ส่งคำตอบ") and st.session_state.running:
-    if user_input.strip() == st.session_state.word:
-        st.session_state.correct = True
-        st.session_state.score += 10  # เพิ่มคะแนนทีละ 10
-        if st.session_state.score > 100:
-            st.session_state.score = 100  # จำกัดคะแนนที่ 100
-    else:
-        st.session_state.correct = False
-    st.session_state.running = False  
-    st.rerun()
+    # ปุ่มส่งคำตอบ
+    if st.button("✅ ส่งคำตอบ"):
+        if st.session_state.user_answer.lower().strip() == st.session_state.word_to_guess.lower().strip():
+            st.success("🎉 คำตอบถูกต้อง! +10 คะแนน")
+            st.session_state.score += 10
+        else:
+            st.error("❌ คำตอบผิด ลองอีกครั้ง!")
 
-# แสดงผลลัพธ์
-if st.session_state.correct is not None:
-    if st.session_state.correct:
-        st.success(f"🎉 คำตอบถูกต้อง! +10 คะแนน (คะแนนรวม: {st.session_state.score}/100)")
-    else:
-        st.error("❌ คำตอบผิด ลองใหม่!")
+        # เลือกคำใหม่เมื่อผู้เล่นตอบเสร็จ
+        if st.session_state.score < 100:
+            select_new_word()
+        else:
+            st.session_state.game_running = False
+            st.success("🏆 คุณทำคะแนนเต็ม 100! ยินดีด้วย!")
 
-# แสดงข้อความเมื่อหมดเวลา
-if not st.session_state.running and st.session_state.time_left == 0:
-    st.warning("⏳ หมดเวลา! ลองใหม่")
-
-# ปุ่มรีเซ็ตเกม
-if st.button("🔄 รีเซ็ตเกม"):
-    st.session_state.score = 0  # รีเซ็ตคะแนนเป็น 0
-    reset_game()
+    # ถ้าเวลาหมด
+    if st.session_state.time_left <= 0:
+        st.error("⏰ หมดเวลา! คำตอบคือ: " + st.session_state.word_to_guess)
+        select_new_word()
