@@ -94,7 +94,7 @@ if st.session_state.game_running:
     st.write(f"⏳ เวลาที่เหลือ: {st.session_state.time_left} วินาที")
 
     # กล่องให้กรอกคำตอบ
-    user_input = st.text_input("🔤 พิมพ์คำตอบของคุณ")
+    user_input = st.text_input("🔤 พิมพ์คำตอบของคุณ", value="", key="answer_input")
 
     # ปุ่มส่งคำตอบ
     if st.button("✅ ส่งคำตอบ"):
@@ -103,7 +103,6 @@ if st.session_state.game_running:
             st.session_state.score += 10
             if st.session_state.score < 100:
                 select_new_word()
-                st.experimental_rerun()
             else:
                 st.session_state.game_running = False
                 st.success("🏆 คุณทำคะแนนเต็ม 100! ยินดีด้วย!")
@@ -114,10 +113,8 @@ if st.session_state.game_running:
     # ปุ่มไปข้อถัดไป (ข้ามคำถาม)
     if st.button("➡️ ข้อถัดไป"):
         select_new_word()
-        st.experimental_rerun()
 
     # ถ้าเวลาหมด
     if st.session_state.time_left <= 0:
         st.error(f"⏰ หมดเวลา! คำตอบคือ: {st.session_state.word_to_guess}")
         select_new_word()
-        st.experimental_rerun()
